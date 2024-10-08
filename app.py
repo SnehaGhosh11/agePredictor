@@ -36,7 +36,7 @@ model_names = [model_name for model_name in CLASSIFIERS.keys()]
 ss["train_model_list"] = st.multiselect("Select models to train data on:", model_names)
 
 if st.button("Submit"):
-    ss["is_button_pressed"] = True  # Set button pressed to true on submit
+    
 
     if uploaded_train_file is None or ss["train_model_list"] == []:
         st.error("Please select at least one training file and at least one model to train on!")
@@ -46,6 +46,7 @@ if st.button("Submit"):
         # Save uploaded file
         if save_input_file(uploaded_train_file, INPUT_TRAIN_FILE):
             st.success(f"File '{uploaded_train_file.name}' uploaded and saved successfully!")
+
 
             try:
                 # Load the data from the file
@@ -85,72 +86,74 @@ if st.button("Submit"):
                 if high_accuracy_models:
                     st.write("Models with accuracy above 0.95:")
                     st.write(list(high_accuracy_models.keys()))
-
-                    # File uploader for sample data
-                    uploaded_sample_file = st.file_uploader(
-                        "Choose the Sample dataset file for testing", type=["csv"], key="sample_file_uploader"
-                    )
-
-                    if uploaded_sample_file is not None:
-                        # Save uploaded sample file
-                        if save_input_file(uploaded_sample_file, INPUT_SAMPLE_FILE):
-                            st.success(f"Sample file '{uploaded_sample_file.name}' uploaded and saved successfully!")
-
-                            try:
-                                # Load the sample data
-                                df_sample = load_data(INPUT_SAMPLE_FILE)
-                                st.write("Sample data loaded successfully!")
-                                st.dataframe(df_sample.head())  # Display the first few rows of the sample data
-
-                                # Clean the sample data (same process as training data)
-                                df_sample_cleaned = clean_sample_data(df_sample, encoders, scaler)
-                                st.write("Sample data cleaned and processed successfully!")
-                                st.dataframe(df_sample_cleaned.head())  # Display the cleaned sample data
-
-                                # If target column exists in sample data, separate it
-                                if target_column in df_sample_cleaned.columns:
-                                    X_sample = df_sample_cleaned.drop(target_column, axis=1)
-                                    y_sample = df_sample_cleaned[target_column]
-                                    has_target = True
-                                else:
-                                    X_sample = df_sample_cleaned
-                                    y_sample = None
-                                    has_target = False
-
-                                st.write("Sample data prepared for prediction!")
-                                st.write(f"Sample features shape: {X_sample.shape}")
-
-                                # Predict using the high accuracy models
-                                predictions = predict_with_models(X_sample, high_accuracy_models)
-
-                                # Display predictions and evaluation metrics
-                                for model_name, preds in predictions.items():
-                                    st.write(f"Predictions using {model_name}:")
-                                    st.write(preds)
-
-                                    # If actual target values are available, evaluate predictions
-                                    if has_target:
-                                        metrics = evaluate_predictions(y_sample, preds)
-                                        st.write(f"Evaluation metrics for {model_name}:")
-                                        st.write(metrics)
-                            except Exception as e:
-                                st.error(f"Error processing sample data: {e}")
-                                log_message("error", str(e))
-                        else:
-                            st.error("Sample file could not be saved for processing")
-                    else:
-                        st.info("Please upload a sample dataset CSV file to test the high accuracy models.")
+                        
                 else:
                     st.info("No models with accuracy above 0.95 were found.")
-
+                
+                ss["is_button_pressed"] = True  # Set button pressed to true on submit
+        
             except Exception as e:
+
                 st.error(f"Error processing data: {e}")
                 log_message("error", str(e))
+        else:        
+            st.error("Sample file could not be saved for processing")
 
-        else:
-            st.error("File could not be saved for processing")
-            st.stop()
-
+    
     except Exception as e:
         log_message("error", str(e))
         st.error(f"Error uploading the file: {e}")
+
+
+if ss["is_button_pressed"]:
+    # File uploader for sample data
+    uploaded_sample_file = st.file_uploader(
+        "Choose the Sample dataset file for testing", type=["csv"], key="sample_file_uploader"
+    )
+
+    if uploaded_sample_file is not None:
+        # Save uploaded sample file
+        if save_input_file(uploaded_sample_file, INPUT_SAMPLE_FILE):
+            st.success(f"Sample file '{uploaded_sample_file.name}' uploaded and saved successfully!")
+
+            try:
+                # Load the sample data
+                df_sample = load_data(INPUT_SAMPLE_FILE)
+                st.write("Sample data loaded successfully!")
+                st.dataframe(df_sample.head())  # Display the first few rows of the sample data
+
+                # Clean the sample data (same process as training data)
+                df_sample_cleaned = clean_sample_data(df_sample, encoders, scaler)
+                st.write("Sample data cleaned and processed successfully!")
+                st.dataframe(df_sample_cleaned.head())  # Display the cleaned sample data
+
+                # If target column exists in sample data, separate it
+                if target_column in df_sample_cleaned.columns:
+                    X_sample = df_sample_cleaned.drop(target_column, axis=1)
+                    y_sample = df_sample_cleaned[target_column]
+                    has_target = True
+                else:
+                    X_sample = df_sample_cleaned
+                    y_sample = None
+                    has_target = False
+
+                st.write("Sample data prepared for prediction!")
+                st.write(f"Sample features shape: {X_sample.shape}")
+
+                # Predict using the high accuracy models
+                predictions = predict_with_models(X_sample, high_accuracy_models)
+
+                # Display predictions and evaluation metrics
+                for model_name, preds in predictions.items():
+                    st.write(f"Predictions using {model_name}:")
+                    st.write(preds)
+
+                    # If actual target values are available, evaluate predictions
+                    if has_target:
+                        metrics = evaluate_predictions(y_sample, preds)
+                        st.write(f"Evaluation metrics for {model_name}:")
+                        st.write(metrics)
+            except Exception as e:
+                st.error(f"Error processing sample data: {e}")
+                log_message("error", str(e))
+                raise
