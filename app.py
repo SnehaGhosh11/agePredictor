@@ -156,4 +156,3 @@ if ss["is_button_pressed"]:
             except Exception as e:
                 st.error(f"Error processing sample data: {e}")
                 log_message("error", str(e))
-                raise
